@@ -16,6 +16,7 @@ II's menu sends telemetry data every time you join a room, this includes your:
 - Room's playerlist
 - Room's player count
 - Gamemode
+---
 Also:
 This mod contains the console that sends telemetry data every time you join a room.
 
