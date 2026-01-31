@@ -1,0 +1,72 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using BepInEx;
+using HarmonyLib;
+using UnityEngine;
+using UnityEngine.Networking;
+using Console;
+
+// Credits to BrokenStone for the Consoleless Mod. Consoleless Repo --> https://github.com/BrokenSt0ne/Consoleless.
+
+
+namespace ConsolelessConsole
+{
+    [BepInPlugin("icetheperson.ConsolelessConsole", "ConsolelessConsole", "1.0.1")]
+    public class Plugin : BaseUnityPlugin
+    {
+        void Start() => global::Console.Console.LoadConsole();
+
+        public void Awake()
+        {
+            var harmony = new Harmony("icetheperson.ConsolelessConsole");
+            harmony.PatchAll();
+            Debug.Log("[ConsolelessConsole] Initialized");
+        }
+    }
+
+    public class Constants
+    {
+        public static List<string> BlockedUrls = new List<string>()
+        {
+            "https://iidk.online/",
+            "https://raw.githubusercontent.com/iiDk-the-actual/Console",
+            "https://data.hamburbur.org",
+            "https://files.hamburbur.org"
+        };
+    }
+
+    [HarmonyPatch(typeof(UnityWebRequest), nameof(UnityWebRequest.SendWebRequest))]
+    public class UnityWebRequestPatch
+    {
+        [HarmonyPrefix]
+        static bool Prefix(UnityWebRequest __instance)
+        {
+            if (Constants.BlockedUrls.Any(blocked => __instance.url.StartsWith(blocked)))
+            {
+                Debug.Log($"[ConsolelessConsole] Blocked {__instance.url}");
+                __instance.url = null;
+            }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(HttpClient), nameof(HttpClient.GetByteArrayAsync), new[] { typeof(string) })]
+    public class HttpClientPatch
+    {
+        [HarmonyPrefix]
+        static bool Prefix(string requestUri, ref Task<byte[]> __result)
+        {
+            if (Constants.BlockedUrls.Any(blocked => requestUri.StartsWith(blocked)))
+            {
+                Debug.Log($"[ConsolelessConsole] Blocked {requestUri}");
+                __result = Task.FromResult(new byte[0]);
+                return false;
+            }
+            return true;
+        }
+    }
+}
+
